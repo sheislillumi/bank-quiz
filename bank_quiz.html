@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>地方銀行 所在都道府県 クイズ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #1565c0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      width: 100%;
+      max-width: 520px;
+      padding: 32px 28px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.4rem;
+      color: #1a237e;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    /* Progress */
+    .progress-bar {
+      background: #e3e8f0;
+      border-radius: 8px;
+      height: 8px;
+      margin-bottom: 6px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      background: linear-gradient(90deg, #1565c0, #42a5f5);
+      height: 100%;
+      border-radius: 8px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      text-align: right;
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 20px;
+    }
+
+    /* Question */
+    .question-num {
+      font-size: 0.85rem;
+      color: #1565c0;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    .question-text {
+      font-size: 1.15rem;
+      font-weight: bold;
+      color: #222;
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+    .bank-name {
+      color: #1a237e;
+    }
+
+    /* Choices */
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .choice-btn {
+      background: #f4f6fb;
+      border: 2px solid #d0d9ee;
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 1rem;
+      color: #333;
+      cursor: pointer;
+      text-align: left;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .choice-btn:hover:not(:disabled) {
+      background: #e8edf8;
+      border-color: #90a4d4;
+      transform: translateY(-1px);
+    }
+    .choice-btn .num {
+      background: #d0d9ee;
+      color: #1a237e;
+      font-weight: bold;
+      font-size: 0.85rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .choice-btn.correct {
+      background: #e8f5e9;
+      border-color: #43a047;
+      color: #2e7d32;
+    }
+    .choice-btn.correct .num { background: #43a047; color: #fff; }
+    .choice-btn.wrong {
+      background: #ffebee;
+      border-color: #e53935;
+      color: #c62828;
+    }
+    .choice-btn.wrong .num { background: #e53935; color: #fff; }
+    .choice-btn:disabled { cursor: default; }
+
+    /* Feedback */
+    .feedback {
+      margin-top: 18px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1rem;
+      display: none;
+    }
+    .feedback.show { display: block; }
+    .feedback.ok  { background: #e8f5e9; color: #2e7d32; }
+    .feedback.ng  { background: #ffebee; color: #c62828; }
+
+    /* Next button */
+    .next-btn {
+      display: none;
+      margin-top: 20px;
+      width: 100%;
+      background: linear-gradient(90deg, #1565c0, #1e88e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .next-btn:hover { opacity: 0.9; }
+    .next-btn.show { display: block; }
+
+    /* Score screen */
+    #score-screen { display: none; text-align: center; }
+    .score-circle {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1565c0, #42a5f5);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      box-shadow: 0 4px 16px rgba(21,101,192,0.35);
+    }
+    .score-num {
+      font-size: 2.4rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+    .score-denom { font-size: 0.9rem; opacity: 0.85; }
+    .score-msg {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #1a237e;
+      margin-bottom: 8px;
+    }
+    .score-sub { color: #666; font-size: 0.9rem; margin-bottom: 28px; }
+
+    .retry-btn {
+      background: linear-gradient(90deg, #1565c0, #1e88e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 14px 40px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .retry-btn:hover { opacity: 0.9; }
+
+    /* Start screen */
+    #start-screen { text-align: center; }
+    .start-desc {
+      color: #555;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+    .start-btn {
+      background: linear-gradient(90deg, #1565c0, #1e88e5);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 16px 48px;
+      font-size: 1.05rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .start-btn:hover { opacity: 0.9; }
+
+    #quiz-screen { display: none; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Start -->
+  <div id="start-screen">
+    <h1>地方銀行 所在都道府県</h1>
+    <p class="subtitle">4択クイズ</p>
+    <p class="start-desc">
+      全国の地方銀行の名前を見て、<br>
+      その銀行がある都道府県を4択から選びましょう。<br>
+      全10問 ・ランダム出題
+    </p>
+    <button class="start-btn" onclick="startQuiz()">スタート</button>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz-screen">
+    <h1>地方銀行クイズ</h1>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+    <div class="progress-label" id="progress-label"></div>
+
+    <div class="question-num" id="question-num"></div>
+    <div class="question-text" id="question-text"></div>
+
+    <div class="choices" id="choices"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()">次の問題へ →</button>
+  </div>
+
+  <!-- Score -->
+  <div id="score-screen">
+    <h1>クイズ結果</h1>
+    <p class="subtitle" style="margin-bottom:24px">お疲れさまでした！</p>
+    <div class="score-circle">
+      <span class="score-num" id="score-num"></span>
+      <span class="score-denom">/ 10問</span>
+    </div>
+    <div class="score-msg" id="score-msg"></div>
+    <div class="score-sub" id="score-sub"></div>
+    <button class="retry-btn" onclick="startQuiz()">もう一度挑戦</button>
+  </div>
+
+</div>
+
+<script>
+const BANKS = [
+  ["北海道銀行","北海道"],["北洋銀行","北海道"],
+  ["青森銀行","青森県"],["みちのく銀行","青森県"],
+  ["岩手銀行","岩手県"],["東北銀行","岩手県"],
+  ["七十七銀行","宮城県"],["仙台銀行","宮城県"],
+  ["秋田銀行","秋田県"],["北都銀行","秋田県"],
+  ["山形銀行","山形県"],["荘内銀行","山形県"],
+  ["東邦銀行","福島県"],["福島銀行","福島県"],
+  ["常陽銀行","茨城県"],["筑波銀行","茨城県"],
+  ["足利銀行","栃木県"],["栃木銀行","栃木県"],
+  ["群馬銀行","群馬県"],["東和銀行","群馬県"],
+  ["武蔵野銀行","埼玉県"],["埼玉りそな銀行","埼玉県"],
+  ["千葉銀行","千葉県"],["千葉興業銀行","千葉県"],
+  ["東京都民銀行","東京都"],["西武信用金庫","東京都"],
+  ["横浜銀行","神奈川県"],["神奈川銀行","神奈川県"],
+  ["第四北越銀行","新潟県"],["大光銀行","新潟県"],
+  ["北陸銀行","富山県"],["富山銀行","富山県"],
+  ["北國銀行","石川県"],["金沢信用金庫","石川県"],
+  ["福井銀行","福井県"],["福邦銀行","福井県"],
+  ["山梨中央銀行","山梨県"],
+  ["八十二銀行","長野県"],["長野銀行","長野県"],
+  ["スルガ銀行","静岡県"],["静岡銀行","静岡県"],["静岡中央銀行","静岡県"],
+  ["百五銀行","三重県"],["三重銀行","三重県"],
+  ["大垣共立銀行","岐阜県"],["十六銀行","岐阜県"],
+  ["愛知銀行","愛知県"],["名古屋銀行","愛知県"],["中京銀行","愛知県"],
+  ["滋賀銀行","滋賀県"],["びわこ銀行","滋賀県"],
+  ["京都銀行","京都府"],
+  ["南都銀行","奈良県"],["大和信用金庫","奈良県"],
+  ["池田泉州銀行","大阪府"],["関西みらい銀行","大阪府"],
+  ["但馬銀行","兵庫県"],["みなと銀行","兵庫県"],
+  ["紀陽銀行","和歌山県"],["wakayama銀行","和歌山県"],
+  ["鳥取銀行","鳥取県"],
+  ["山陰合同銀行","島根県"],
+  ["中国銀行","岡山県"],["トマト銀行","岡山県"],
+  ["広島銀行","広島県"],["もみじ銀行","広島県"],
+  ["山口銀行","山口県"],["西京銀行","山口県"],
+  ["阿波銀行","徳島県"],["徳島大正銀行","徳島県"],
+  ["百十四銀行","香川県"],["香川銀行","香川県"],
+  ["伊予銀行","愛媛県"],["愛媛銀行","愛媛県"],
+  ["四国銀行","高知県"],["高知銀行","高知県"],
+  ["福岡銀行","福岡県"],["西日本シティ銀行","福岡県"],["北九州銀行","福岡県"],["筑邦銀行","福岡県"],
+  ["佐賀銀行","佐賀県"],
+  ["親和銀行","長崎県"],["十八親和銀行","長崎県"],
+  ["肥後銀行","熊本県"],["熊本銀行","熊本県"],
+  ["大分銀行","大分県"],["豊和銀行","大分県"],
+  ["宮崎銀行","宮崎県"],["宮崎太陽銀行","宮崎県"],
+  ["鹿児島銀行","鹿児島県"],["南日本銀行","鹿児島県"],
+  ["琉球銀行","沖縄県"],["沖縄銀行","沖縄県"],["沖縄海邦銀行","沖縄県"],
+];
+
+const ALL_PREFECTURES = [...new Set(BANKS.map(b => b[1]))];
+
+let questions = [], current = 0, score = 0;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function makeChoices(correct) {
+  const wrong = ALL_PREFECTURES.filter(p => p !== correct);
+  const choices = shuffle(wrong).slice(0, 3).concat(correct);
+  return shuffle(choices);
+}
+
+function startQuiz() {
+  questions = shuffle(BANKS).slice(0, 10);
+  current = 0;
+  score = 0;
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('score-screen').style.display = 'none';
+  document.getElementById('quiz-screen').style.display = 'block';
+  showQuestion();
+}
+
+function showQuestion() {
+  const [bank, correct] = questions[current];
+  const choices = makeChoices(correct);
+
+  const pct = (current / 10) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${current} / 10 問`;
+  document.getElementById('question-num').textContent = `第${current + 1}問`;
+  document.getElementById('question-text').innerHTML =
+    `「<span class="bank-name">${bank}</span>」の所在都道府県はどこ？`;
+
+  const container = document.getElementById('choices');
+  container.innerHTML = '';
+  choices.forEach((pref, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="num">${i + 1}</span>${pref}`;
+    btn.onclick = () => answer(btn, pref, correct, choices);
+    container.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback');
+  fb.className = 'feedback';
+  fb.textContent = '';
+  document.getElementById('next-btn').className = 'next-btn';
+}
+
+function answer(btn, chosen, correct, choices) {
+  // disable all
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  const fb = document.getElementById('feedback');
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    fb.className = 'feedback ok show';
+    fb.textContent = '○ 正解！';
+    score++;
+  } else {
+    btn.classList.add('wrong');
+    // highlight correct
+    document.querySelectorAll('.choice-btn').forEach(b => {
+      if (b.textContent.includes(correct)) b.classList.add('correct');
+    });
+    fb.className = 'feedback ng show';
+    fb.textContent = `× 不正解。正解は「${correct}」でした。`;
+  }
+
+  const nb = document.getElementById('next-btn');
+  nb.className = 'next-btn show';
+  nb.textContent = current < 9 ? '次の問題へ →' : '結果を見る';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= 10) {
+    showScore();
+  } else {
+    showQuestion();
+  }
+}
+
+function showScore() {
+  document.getElementById('quiz-screen').style.display = 'none';
+  document.getElementById('score-screen').style.display = 'block';
+  document.getElementById('progress-fill').style.width = '100%';
+
+  document.getElementById('score-num').textContent = score;
+
+  let msg, sub;
+  if (score === 10) {
+    msg = '完全正解！素晴らしい！';
+    sub = '地方銀行マスターです！';
+  } else if (score >= 7) {
+    msg = 'よくできました！';
+    sub = 'あと少しで満点です！';
+  } else if (score >= 4) {
+    msg = 'まずまずです。';
+    sub = 'もう一度挑戦してみましょう！';
+  } else {
+    msg = 'もっと勉強してみましょう！';
+    sub = '再挑戦でスコアアップを目指そう！';
+  }
+  document.getElementById('score-msg').textContent = msg;
+  document.getElementById('score-sub').textContent = sub;
+}
+</script>
+</body>
+</html>
