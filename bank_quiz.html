@@ -226,7 +226,97 @@
     }
     .start-btn:hover { opacity: 0.9; }
 
+    .view-list-btn {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      background: transparent;
+      color: #1565c0;
+      border: 2px solid #90a4d4;
+      border-radius: 10px;
+      padding: 12px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .view-list-btn:hover { background: #e8edf8; border-color: #1565c0; }
+
     #quiz-screen { display: none; }
+
+    /* ── 一覧画面 ── */
+    #list-screen { display: none; }
+    .list-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 6px;
+      position: relative;
+    }
+    .list-header h1 { flex: 1; }
+    .back-btn {
+      background: none;
+      border: 2px solid #1565c0;
+      color: #1565c0;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      left: 0;
+      transition: background 0.15s;
+    }
+    .back-btn:hover { background: #e8edf8; }
+    .list-note {
+      text-align: center;
+      color: #999;
+      font-size: 0.8rem;
+      margin-bottom: 18px;
+    }
+    .region-block { margin-bottom: 18px; }
+    .region-title {
+      color: #fff;
+      font-weight: bold;
+      padding: 8px 14px;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.9rem;
+      letter-spacing: 0.04em;
+    }
+    .bank-table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #d0d9ee;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+    }
+    .bank-table tr:nth-child(even) .pref-cell { background: #eaeefd; }
+    .bank-table tr:nth-child(even) .chips-cell { background: #f8f9fc; }
+    .bank-table td {
+      padding: 7px 10px;
+      font-size: 0.87rem;
+      border-bottom: 1px solid #e3e8f0;
+      vertical-align: middle;
+    }
+    .bank-table tr:last-child td { border-bottom: none; }
+    .pref-cell {
+      font-weight: bold;
+      color: #1a237e;
+      width: 88px;
+      white-space: nowrap;
+      background: #eef1fa;
+    }
+    .chips-cell { background: #fff; }
+    .bank-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .bank-chip {
+      background: #e8edf8;
+      border: 1px solid #c5d0e8;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 0.82rem;
+      color: #333;
+      white-space: nowrap;
+    }
   </style>
 </head>
 <body>
@@ -239,9 +329,11 @@
     <p class="start-desc">
       全国の地方銀行の名前を見て、<br>
       その銀行がある都道府県を4択から選びましょう。<br>
+      （銀行名に都道府県名を含むものは除外）<br>
       全10問 ・ランダム出題
     </p>
     <button class="start-btn" onclick="startQuiz()">スタート</button>
+    <button class="view-list-btn" onclick="showList()">📋 地方銀行 一覧を見る</button>
   </div>
 
   <!-- Quiz -->
@@ -269,6 +361,16 @@
     <div class="score-msg" id="score-msg"></div>
     <div class="score-sub" id="score-sub"></div>
     <button class="retry-btn" onclick="startQuiz()">もう一度挑戦</button>
+  </div>
+
+  <!-- List -->
+  <div id="list-screen">
+    <div class="list-header">
+      <button class="back-btn" onclick="backToStart()">← 戻る</button>
+      <h1>地方銀行 一覧</h1>
+    </div>
+    <p class="list-note">地方・都道府県別 全行一覧（94行）</p>
+    <div id="region-list"></div>
   </div>
 
 </div>
@@ -304,7 +406,7 @@ const BANKS = [
   ["南都銀行","奈良県"],["大和信用金庫","奈良県"],
   ["池田泉州銀行","大阪府"],["関西みらい銀行","大阪府"],
   ["但馬銀行","兵庫県"],["みなと銀行","兵庫県"],
-  ["紀陽銀行","和歌山県"],["wakayama銀行","和歌山県"],
+  ["紀陽銀行","和歌山県"],
   ["鳥取銀行","鳥取県"],
   ["山陰合同銀行","島根県"],
   ["中国銀行","岡山県"],["トマト銀行","岡山県"],
@@ -324,7 +426,98 @@ const BANKS = [
   ["琉球銀行","沖縄県"],["沖縄銀行","沖縄県"],["沖縄海邦銀行","沖縄県"],
 ];
 
+// 都道府県名（県/都/道/府を除いた部分）
+const PREF_KEYWORDS = [
+  "北海道","青森","岩手","宮城","秋田","山形","福島",
+  "茨城","栃木","群馬","埼玉","千葉","東京","神奈川",
+  "新潟","富山","石川","福井","山梨","長野","岐阜",
+  "静岡","愛知","三重","滋賀","京都","大阪","兵庫",
+  "奈良","和歌山","鳥取","島根","岡山","広島","山口",
+  "徳島","香川","愛媛","高知","福岡","佐賀","長崎",
+  "熊本","大分","宮崎","鹿児島","沖縄"
+];
+
+// 銀行名に都道府県名が含まれるものを除外
+const QUIZ_BANKS = BANKS.filter(([name]) =>
+  !PREF_KEYWORDS.some(kw => name.includes(kw))
+);
+
 const ALL_PREFECTURES = [...new Set(BANKS.map(b => b[1]))];
+
+const REGIONS = [
+  { name: "北海道地方", color: "#00838f", prefs: ["北海道"] },
+  { name: "東北地方",   color: "#1565c0", prefs: ["青森県","岩手県","宮城県","秋田県","山形県","福島県"] },
+  { name: "関東地方",   color: "#283593", prefs: ["茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県"] },
+  { name: "中部地方",   color: "#6a1b9a", prefs: ["新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県"] },
+  { name: "近畿地方",   color: "#e65100", prefs: ["三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県"] },
+  { name: "中国地方",   color: "#2e7d32", prefs: ["鳥取県","島根県","岡山県","広島県","山口県"] },
+  { name: "四国地方",   color: "#00695c", prefs: ["徳島県","香川県","愛媛県","高知県"] },
+  { name: "九州・沖縄", color: "#b71c1c", prefs: ["福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"] },
+];
+
+function showList() {
+  document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('list-screen').style.display = 'block';
+  buildList();
+}
+
+function backToStart() {
+  document.getElementById('list-screen').style.display = 'none';
+  document.getElementById('start-screen').style.display = '';
+}
+
+function buildList() {
+  const container = document.getElementById('region-list');
+  if (container.hasChildNodes()) return;
+
+  const prefMap = {};
+  BANKS.forEach(([name, pref]) => {
+    (prefMap[pref] = prefMap[pref] || []).push(name);
+  });
+
+  REGIONS.forEach(({ name, color, prefs }) => {
+    const block = document.createElement('div');
+    block.className = 'region-block';
+
+    const title = document.createElement('div');
+    title.className = 'region-title';
+    title.style.background = color;
+    title.textContent = name;
+    block.appendChild(title);
+
+    const table = document.createElement('table');
+    table.className = 'bank-table';
+
+    prefs.forEach(pref => {
+      const banks = prefMap[pref];
+      if (!banks || banks.length === 0) return;
+      const tr = document.createElement('tr');
+
+      const tdPref = document.createElement('td');
+      tdPref.className = 'pref-cell';
+      tdPref.textContent = pref;
+
+      const tdBanks = document.createElement('td');
+      tdBanks.className = 'chips-cell';
+      const chipsDiv = document.createElement('div');
+      chipsDiv.className = 'bank-chips';
+      banks.forEach(b => {
+        const chip = document.createElement('span');
+        chip.className = 'bank-chip';
+        chip.textContent = b;
+        chipsDiv.appendChild(chip);
+      });
+      tdBanks.appendChild(chipsDiv);
+
+      tr.appendChild(tdPref);
+      tr.appendChild(tdBanks);
+      table.appendChild(tr);
+    });
+
+    block.appendChild(table);
+    container.appendChild(block);
+  });
+}
 
 let questions = [], current = 0, score = 0;
 
@@ -344,7 +537,7 @@ function makeChoices(correct) {
 }
 
 function startQuiz() {
-  questions = shuffle(BANKS).slice(0, 10);
+  questions = shuffle(QUIZ_BANKS).slice(0, 10);
   current = 0;
   score = 0;
   document.getElementById('start-screen').style.display = 'none';
