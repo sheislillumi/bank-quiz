@@ -244,6 +244,22 @@
 
     #quiz-screen { display: none; }
 
+    /* TOP へ戻るボタン */
+    .top-btn {
+      background: none;
+      border: none;
+      color: #90a4d4;
+      font-size: 0.82rem;
+      cursor: pointer;
+      padding: 0;
+      margin-bottom: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.15s;
+    }
+    .top-btn:hover { color: #1565c0; }
+
     /* ── 一覧画面 ── */
     #list-screen { display: none; }
     .list-header {
@@ -338,6 +354,7 @@
 
   <!-- Quiz -->
   <div id="quiz-screen">
+    <button class="top-btn" onclick="confirmGoTop()">← TOP へ戻る</button>
     <h1>地方銀行クイズ</h1>
     <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
     <div class="progress-label" id="progress-label"></div>
@@ -534,6 +551,13 @@ function makeChoices(correct) {
   const wrong = ALL_PREFECTURES.filter(p => p !== correct);
   const choices = shuffle(wrong).slice(0, 3).concat(correct);
   return shuffle(choices);
+}
+
+function confirmGoTop() {
+  if (confirm('クイズを中断してTOP画面に戻りますか？\n（現在の進捗はリセットされます）')) {
+    document.getElementById('quiz-screen').style.display = 'none';
+    document.getElementById('start-screen').style.display = '';
+  }
 }
 
 function startQuiz() {
